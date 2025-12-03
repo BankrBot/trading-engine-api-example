@@ -244,6 +244,13 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                 mono
               />
               <InfoRow label="Slippage" value={`${order.slippageBps / 100}%`} />
+              {order.quoteRequest?.config &&
+                "triggerPrice" in order.quoteRequest.config && (
+                  <InfoRow
+                    label="Trigger Price"
+                    value={`${order.quoteRequest.config.triggerPrice} ${order.sellToken.symbol}/${order.buyToken.symbol}`}
+                  />
+                )}
               <InfoRow label="Created" value={formatDate(order.createdAt)} />
               <InfoRow label="Expires" value={formatDate(order.expiresAt)} />
               {order.trailing && <InfoRow label="Trailing" value="Yes" />}
