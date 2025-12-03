@@ -124,7 +124,8 @@ export function OrderForm() {
     try {
       const decimals = sellTokenInfo?.decimals || 18;
       const sellAmountRaw = parseUnits(sellAmount, decimals).toString();
-      const expirationDate = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+      const expirationDate =
+        Math.floor(Date.now() / 1000) + parseInt(expirationHours) * 3600;
 
       // Use limit-buy order type with a dummy trigger price to get market quote
       const quoteRequest: QuoteRequest = {
@@ -143,7 +144,22 @@ export function OrderForm() {
 
       const response = await createQuote(quoteRequest);
 
+      // Debug logging
+      console.log("[OrderForm] Quote response:", JSON.stringify(response, null, 2));
+      console.log("[OrderForm] metadata:", response.metadata);
+      console.log("[OrderForm] sellToken:", response.metadata?.sellToken);
+      console.log("[OrderForm] marketBuyAmount:", response.metadata?.marketBuyAmount);
+
       // Calculate market price from response: sellAmount / marketBuyAmount
+      if (!response.metadata?.sellToken?.amount?.raw) {
+        console.error("[OrderForm] sellToken.amount.raw is missing:", response.metadata?.sellToken);
+        throw new Error("sellToken amount not available in response");
+      }
+      if (!response.metadata?.marketBuyAmount?.amount?.raw) {
+        console.error("[OrderForm] marketBuyAmount.amount.raw is missing:", response.metadata?.marketBuyAmount);
+        throw new Error("marketBuyAmount not available in response");
+      }
+
       const sellRaw = BigInt(response.metadata.sellToken.amount.raw);
       const marketBuyRaw = BigInt(response.metadata.marketBuyAmount.amount.raw);
 
@@ -180,6 +196,7 @@ export function OrderForm() {
     sellAmount,
     chainId,
     sellTokenInfo?.decimals,
+    expirationHours,
   ]);
 
   // Debounced effect to fetch market price when inputs change

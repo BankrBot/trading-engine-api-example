@@ -18,6 +18,11 @@ async function apiRequest<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
+  console.log(`[API] ${options.method || "GET"} ${url}`);
+  if (options.body) {
+    console.log("[API] Request body:", options.body);
+  }
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -27,6 +32,9 @@ async function apiRequest<T>(
   });
 
   const data = await response.json();
+
+  console.log(`[API] Response status: ${response.status}`);
+  console.log("[API] Response data:", JSON.stringify(data, null, 2));
 
   if (!response.ok) {
     // Handle error - data.error might be an object with message property
@@ -38,6 +46,7 @@ async function apiRequest<T>(
     } else if (data.error?.message) {
       errorMessage = data.error.message;
     }
+    console.error("[API] Error:", errorMessage, "Full response:", data);
     throw new Error(errorMessage);
   }
 
