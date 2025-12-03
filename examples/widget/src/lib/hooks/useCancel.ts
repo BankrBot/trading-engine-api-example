@@ -3,11 +3,14 @@
 import { useState, useCallback } from "react";
 import { useSignTypedData } from "wagmi";
 import { cancelOrder } from "@/lib/api";
-import { BANKR_ORDERS_ADDRESSES } from "@/lib/constants";
 import type { CancelOrderResponse } from "@/lib/types";
 
 interface UseCancelResult {
-  cancel: (orderId: string, orderChainId: number) => Promise<CancelOrderResponse | null>;
+  cancel: (
+    orderId: string,
+    orderChainId: number,
+    verifyingContract: `0x${string}`
+  ) => Promise<CancelOrderResponse | null>;
   isLoading: boolean;
   error: string | null;
   reset: () => void;
@@ -25,18 +28,16 @@ export function useCancel(): UseCancelResult {
   }, []);
 
   const cancel = useCallback(
-    async (orderId: string, orderChainId: number): Promise<CancelOrderResponse | null> => {
+    async (
+      orderId: string,
+      orderChainId: number,
+      verifyingContract: `0x${string}`
+    ): Promise<CancelOrderResponse | null> => {
       setIsLoading(true);
       setError(null);
 
       try {
-        // Build CancelOrder typed data - use ORDER's chainId, not connected wallet's
-        const verifyingContract = BANKR_ORDERS_ADDRESSES[orderChainId];
-        if (!verifyingContract) {
-          throw new Error(`Unsupported chain: ${orderChainId}`);
-        }
-
-        // Sign the cancel order typed data
+        // Sign the cancel order typed data using the contract address the order was signed against
         const signature = await signTypedDataAsync({
           domain: {
             name: "BankrOrders",

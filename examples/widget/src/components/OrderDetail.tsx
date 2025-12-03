@@ -87,7 +87,21 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
     order.status === "paused";
 
   const handleCancel = async () => {
-    const result = await cancel(order.orderId, order.chainId);
+    // Get verifying contract from protocolData (the contract the order was signed against)
+    const verifyingContract = order.protocolData?.protocolAddress;
+
+    if (!verifyingContract) {
+      cogoToast.error("Unable to cancel: order is missing protocol data", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    const result = await cancel(
+      order.orderId,
+      order.chainId,
+      verifyingContract as `0x${string}`
+    );
     if (result?.success) {
       cogoToast.success("Order cancelled successfully", {
         position: "top-right",

@@ -143,6 +143,16 @@ export interface ExecutionHistoryEntry {
   };
 }
 
+// Protocol data - contains the contract address the order was signed against
+export interface ProtocolData {
+  protocol: string;
+  protocolAddress: string;
+  data: {
+    order: Record<string, unknown>;
+    orderSignature: string;
+  };
+}
+
 // External order - returned from API
 export interface ExternalOrder {
   orderId: string;
@@ -165,6 +175,7 @@ export interface ExternalOrder {
   externalOrderIdentifier?: string;
   trailing?: boolean;
   txHash?: string;
+  protocolData?: ProtocolData;
 }
 
 // List orders request
