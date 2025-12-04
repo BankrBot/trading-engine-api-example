@@ -56,6 +56,11 @@ export interface QuoteTokenMetadata extends TokenMetadata {
   amount: Amount | null;
 }
 
+// Buy token metadata (includes market buy amount for price calculation)
+export interface BuyQuoteTokenMetadata extends QuoteTokenMetadata {
+  marketBuyAmount: Amount;
+}
+
 // EIP-712 typed data
 export interface TypedDataDomain {
   name: string;
@@ -94,13 +99,7 @@ export interface QuoteResponse {
   actions: QuoteAction[];
   metadata: {
     sellToken: QuoteTokenMetadata;
-    buyToken: QuoteTokenMetadata;
-    /**
-     * Raw buy amount from 0x quote at current market price (before trigger price adjustment)
-     * Use this to calculate current market price: sellToken.amount / marketBuyAmount.amount
-     * Always available for all order types
-     */
-    marketBuyAmount: QuoteTokenMetadata;
+    buyToken: BuyQuoteTokenMetadata;
   };
 }
 

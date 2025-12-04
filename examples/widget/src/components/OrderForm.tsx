@@ -148,31 +148,42 @@ export function OrderForm() {
       console.log("[OrderForm] Quote response:", JSON.stringify(response, null, 2));
       console.log("[OrderForm] metadata:", response.metadata);
       console.log("[OrderForm] sellToken:", response.metadata?.sellToken);
-      console.log("[OrderForm] marketBuyAmount:", response.metadata?.marketBuyAmount);
+      console.log("[OrderForm] buyToken.marketBuyAmount:", response.metadata?.buyToken?.marketBuyAmount);
 
-      // Calculate market price from response: sellAmount / marketBuyAmount
+      // Calculate market price from response: sellAmount / buyToken.marketBuyAmount
       if (!response.metadata?.sellToken?.amount?.raw) {
         console.error("[OrderForm] sellToken.amount.raw is missing:", response.metadata?.sellToken);
         throw new Error("sellToken amount not available in response");
       }
-      if (!response.metadata?.marketBuyAmount?.amount?.raw) {
-        console.error("[OrderForm] marketBuyAmount.amount.raw is missing:", response.metadata?.marketBuyAmount);
-        throw new Error("marketBuyAmount not available in response");
+      if (!response.metadata?.buyToken?.marketBuyAmount?.raw) {
+        console.error("[OrderForm] buyToken.marketBuyAmount.raw is missing:", response.metadata?.buyToken);
+        throw new Error("buyToken.marketBuyAmount not available in response");
       }
 
       const sellRaw = BigInt(response.metadata.sellToken.amount.raw);
-      const marketBuyRaw = BigInt(response.metadata.marketBuyAmount.amount.raw);
+      const marketBuyRaw = BigInt(response.metadata.buyToken.marketBuyAmount.raw);
 
       if (marketBuyRaw > 0n) {
-        // Adjust for decimals difference
         const sellDecimals = response.metadata.sellToken.decimals;
-        const buyDecimals = response.metadata.marketBuyAmount.decimals;
+        const buyDecimals = response.metadata.buyToken.decimals;
 
-        // Price = (sellAmount / 10^sellDecimals) / (buyAmount / 10^buyDecimals)
-        // = sellAmount * 10^buyDecimals / (buyAmount * 10^sellDecimals)
-        const price =
-          (Number(sellRaw) * Math.pow(10, buyDecimals)) /
-          (Number(marketBuyRaw) * Math.pow(10, sellDecimals));
+        // For sell orders: price = buyToken per sellToken (e.g., 2000 USDC per WETH)
+        // For buy orders: price = sellToken per buyToken (e.g., 2000 USDC per WETH)
+        // This matches backend's triggerToken/baseToken convention
+        const isSellOrder = orderType === "limit-sell" || orderType === "stop-sell";
+
+        let price: number;
+        if (isSellOrder) {
+          // buyAmount / sellAmount = USDC per WETH (for selling WETH)
+          price =
+            (Number(marketBuyRaw) * Math.pow(10, sellDecimals)) /
+            (Number(sellRaw) * Math.pow(10, buyDecimals));
+        } else {
+          // sellAmount / buyAmount = USDC per WETH (for buying WETH with USDC)
+          price =
+            (Number(sellRaw) * Math.pow(10, buyDecimals)) /
+            (Number(marketBuyRaw) * Math.pow(10, sellDecimals));
+        }
 
         setMarketPrice(price);
         setPriceError(null);
@@ -494,8 +505,10 @@ export function OrderForm() {
             )}
           </div>
           <p className="text-xs text-surface-500 mt-1">
-            Price in {sellTokenInfo?.symbol || "sell token"} per{" "}
-            {buyTokenInfo?.symbol || "buy token"}
+            Price in{" "}
+            {orderType === "limit-sell" || orderType === "stop-sell"
+              ? `${buyTokenInfo?.symbol || "buy token"} per ${sellTokenInfo?.symbol || "sell token"}`
+              : `${sellTokenInfo?.symbol || "sell token"} per ${buyTokenInfo?.symbol || "buy token"}`}
           </p>
         </div>
       )}
