@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Backend API URL (server-side only, not exposed to client)
 const BACKEND_URL =
-  process.env.API_BACKEND_URL || "https://api-staging.bankr.bot/trading/order";
+  process.env.API_BACKEND_URL || "https://api.bankr.bot/trading/order";
 const API_KEY = process.env.API_KEY || "";
 
 async function proxyRequest(
