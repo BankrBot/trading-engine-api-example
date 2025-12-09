@@ -46,6 +46,16 @@ function formatDate(timestamp: number) {
   return new Date(timestamp * 1000).toLocaleString();
 }
 
+// Format interval seconds into human-readable minutes/seconds
+function formatInterval(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "-";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins > 0 && secs > 0) return `${mins}m ${secs}s`;
+  if (mins > 0) return `${mins}m`;
+  return `${secs}s`;
+}
+
 // Truncate address for display
 function truncateAddress(address: string) {
   return `${address.slice(0, 10)}...${address.slice(-8)}`;
@@ -261,6 +271,19 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                         : "No"
                     }
                   />
+                )}
+              {"interval" in order.config &&
+                "maxExecutions" in order.config && (
+                  <>
+                    <InfoRow
+                      label="Max Executions"
+                      value={(order.config as any).maxExecutions}
+                    />
+                    <InfoRow
+                      label="Interval"
+                      value={formatInterval((order.config as any).interval)}
+                    />
+                  </>
                 )}
               <InfoRow label="Created" value={formatDate(order.createdAt)} />
               <InfoRow label="Expires" value={formatDate(order.expiresAt)} />
