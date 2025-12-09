@@ -36,7 +36,9 @@ function truncateAddress(address: string) {
 export function OrderList() {
   const { orders, isLoading, error, refetch } = useOrders();
   const invalidateOrders = useInvalidateOrders();
-  const [selectedOrder, setSelectedOrder] = useState<ExternalOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ExternalOrder | null>(
+    null
+  );
 
   const handleOrderClick = (order: ExternalOrder) => {
     setSelectedOrder(order);
@@ -111,7 +113,9 @@ export function OrderList() {
       <div className="card overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-surface-100">Your Orders</h2>
+          <h2 className="text-lg font-semibold text-surface-100">
+            Your Orders
+          </h2>
           <button
             onClick={() => refetch()}
             className="btn btn-secondary text-sm py-1 px-3"
@@ -146,51 +150,56 @@ export function OrderList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-800">
-              {orders.map((order) => (
-                <tr
-                  key={order.orderId}
-                  onClick={() => handleOrderClick(order)}
-                  className="hover:bg-surface-800/50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-surface-200">
-                      {ORDER_TYPE_LABELS[order.orderType]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 text-sm">
+              {orders.map((order) => {
+                const orderId = order.orderId;
+                return (
+                  <tr
+                    key={orderId}
+                    onClick={() => handleOrderClick(order)}
+                    className="hover:bg-surface-800/50 cursor-pointer transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <span className="font-medium text-surface-200">
+                        {ORDER_TYPE_LABELS[order.orderType]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 text-sm">
+                        <span className="text-surface-300">
+                          {order.sellToken.symbol ||
+                            truncateAddress(order.sellToken.address)}
+                        </span>
+                        <span className="text-surface-500">→</span>
+                        <span className="text-surface-300">
+                          {order.buyToken.symbol ||
+                            truncateAddress(order.buyToken.address)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <span className="text-surface-300">
-                        {order.sellToken.symbol || truncateAddress(order.sellToken.address)}
+                        {formatAmount(order.sellAmount)}{" "}
+                        <span className="text-surface-500">
+                          {order.sellToken.symbol}
+                        </span>
                       </span>
-                      <span className="text-surface-500">→</span>
-                      <span className="text-surface-300">
-                        {order.buyToken.symbol || truncateAddress(order.buyToken.address)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-surface-400 text-sm">
+                        {CHAIN_NAMES[order.chainId] || `Chain ${order.chainId}`}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-surface-300">
-                      {formatAmount(order.sellAmount)}{" "}
-                      <span className="text-surface-500">
-                        {order.sellToken.symbol}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-surface-500 text-sm">
+                        {formatDate(order.createdAt)}
                       </span>
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-surface-400 text-sm">
-                      {CHAIN_NAMES[order.chainId] || `Chain ${order.chainId}`}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={order.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-surface-500 text-sm">
-                      {formatDate(order.createdAt)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -203,4 +212,3 @@ export function OrderList() {
     </>
   );
 }
-

@@ -37,15 +37,13 @@ async function apiRequest<T>(
   console.log("[API] Response data:", JSON.stringify(data, null, 2));
 
   if (!response.ok) {
-    // Handle error - data.error might be an object with message property
-    let errorMessage = "API request failed";
-    if (data.message) {
-      errorMessage = data.message;
-    } else if (typeof data.error === "string") {
-      errorMessage = data.error;
-    } else if (data.error?.message) {
-      errorMessage = data.error.message;
-    }
+    // Handle nested error envelope: { error: { type, message, ... } }
+    const nestedError = data?.error;
+    const errorMessage =
+      nestedError?.message ||
+      (typeof nestedError === "string" ? nestedError : undefined) ||
+      data?.message ||
+      "API request failed";
     console.error("[API] Error:", errorMessage, "Full response:", data);
     throw new Error(errorMessage);
   }

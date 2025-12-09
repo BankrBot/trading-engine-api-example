@@ -2,11 +2,11 @@ import type { OrderType } from "./constants";
 
 // Config types for different order types
 export interface LimitOrderConfig {
-  triggerPrice: number; // Decimal value
+  triggerPrice: string; // Decimal value as string
 }
 
 export interface StopOrderConfig {
-  triggerPrice: number; // Decimal value
+  triggerPrice: string; // Decimal value as string
   trailing?: boolean;
 }
 
@@ -60,6 +60,33 @@ export interface QuoteTokenMetadata extends TokenMetadata {
 export interface BuyQuoteTokenMetadata extends QuoteTokenMetadata {
   marketBuyAmount: Amount;
 }
+
+// External order config DTOs (no orderType here; top-level orderType covers it)
+export interface LimitOrderConfigDto {
+  triggerPrice: string;
+}
+
+export interface StopOrderConfigDto {
+  triggerPrice: string;
+  trailing?: boolean;
+  percentage?: number;
+}
+
+export interface DcaConfigDto {
+  interval: number;
+  maxExecutions: number;
+}
+
+export interface TwapConfigDto {
+  interval: number;
+  maxExecutions: number;
+}
+
+export type ExternalOrderConfig =
+  | LimitOrderConfigDto
+  | StopOrderConfigDto
+  | DcaConfigDto
+  | TwapConfigDto;
 
 // EIP-712 typed data
 export interface TypedDataDomain {
@@ -158,23 +185,22 @@ export interface ExternalOrder {
   orderType: OrderType;
   chainArch: "EVM";
   chainId: number;
-  sellToken: TokenMetadata;
-  buyToken: TokenMetadata;
+  sellToken: QuoteTokenMetadata;
+  buyToken: QuoteTokenMetadata;
   slippageBps: number;
   createdAt: number;
   expiresAt: number;
   status: OrderStatus;
   fees?: OrderFee[];
-  quoteRequest?: QuoteRequest;
-  sellAmount?: Amount;
-  buyAmount?: Amount;
+  appFeeBps?: number;
+  appFeeRecipient?: string;
+  allowPartial?: boolean;
+  submitPrice: number;
+  config: ExternalOrderConfig;
+  protocolData?: ProtocolData;
   totalSoldAmount?: Amount;
   totalReceivedAmount?: Amount;
   executionHistory?: ExecutionHistoryEntry[];
-  externalOrderIdentifier?: string;
-  trailing?: boolean;
-  txHash?: string;
-  protocolData?: ProtocolData;
 }
 
 // List orders request
@@ -208,7 +234,9 @@ export interface GetOrderResponse {
 
 // API error response
 export interface ApiError {
-  error: string;
-  message: string;
+  error: {
+    type: string;
+    message: string;
+    [key: string]: any;
+  };
 }
-

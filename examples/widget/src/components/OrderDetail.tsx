@@ -2,7 +2,7 @@
 
 import { useCancel } from "@/lib/hooks/useCancel";
 import { ORDER_TYPE_LABELS, STATUS_LABELS, CHAIN_NAMES } from "@/lib/constants";
-import type { ExternalOrder } from "@/lib/types";
+import type { ExternalOrder, StopOrderConfigDto } from "@/lib/types";
 import cogoToast from "cogo-toast";
 
 interface OrderDetailProps {
@@ -22,18 +22,17 @@ function formatAmount(amount: { raw: string; formatted: string } | undefined) {
 
 // Calculate expected buy amount from trigger price for limit/stop orders
 function calculateExpectedBuyAmount(order: ExternalOrder): string | null {
-  // Only calculate for orders without buyAmount
-  if (order.buyAmount) return null;
-  if (!order.sellAmount?.formatted) return null;
-  if (!order.quoteRequest?.config) return null;
+  const sellAmountFormatted = order.sellToken.amount?.formatted;
+  if (!sellAmountFormatted) return null;
 
-  // Check if this is a price-based order with triggerPrice
-  const config = order.quoteRequest.config as { triggerPrice?: number };
-  if (!config.triggerPrice || config.triggerPrice <= 0) return null;
+  const triggerPrice =
+    "triggerPrice" in order.config
+      ? Number.parseFloat((order.config as any).triggerPrice ?? "")
+      : NaN;
+  if (!Number.isFinite(triggerPrice) || triggerPrice <= 0) return null;
 
-  // Calculate: buyAmount = sellAmount / triggerPrice
-  const sellAmount = parseFloat(order.sellAmount.formatted);
-  const expectedBuy = sellAmount / config.triggerPrice;
+  const sellAmount = parseFloat(sellAmountFormatted);
+  const expectedBuy = sellAmount / triggerPrice;
 
   // Format the result
   if (expectedBuy < 0.0001) return expectedBuy.toExponential(2);
@@ -80,6 +79,10 @@ function InfoRow({
 
 export function OrderDetail({ order, onClose }: OrderDetailProps) {
   const { cancel, isLoading, error } = useCancel();
+  const orderId = order.orderId;
+  const verifyingContract = order.protocolData?.protocolAddress as
+    | `0x${string}`
+    | undefined;
 
   const canCancel =
     order.status === "open" ||
@@ -87,26 +90,25 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
     order.status === "paused";
 
   const handleCancel = async () => {
-    // Get verifying contract from protocolData (the contract the order was signed against)
-    const verifyingContract = order.protocolData?.protocolAddress;
-
     if (!verifyingContract) {
-      cogoToast.error("Unable to cancel: order is missing protocol data", {
-        position: "top-right",
-      });
+      cogoToast.error(
+        "Cancel is unavailable for this order (missing protocol data).",
+        {
+          position: "top-right",
+        }
+      );
       return;
     }
-
-    const result = await cancel(
-      order.orderId,
-      order.chainId,
-      verifyingContract as `0x${string}`
-    );
+    const result = await cancel(orderId, order.chainId, verifyingContract);
     if (result?.success) {
       cogoToast.success("Order cancelled successfully", {
         position: "top-right",
       });
       onClose();
+    } else if (result?.error?.message) {
+      cogoToast.error(result.error.message, {
+        position: "top-right",
+      });
     }
   };
 
@@ -127,7 +129,7 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
               {ORDER_TYPE_LABELS[order.orderType]} Order
             </h2>
             <p className="text-sm text-surface-500 font-mono mt-1">
-              {truncateAddress(order.orderId)}
+              {truncateAddress(orderId)}
             </p>
           </div>
           <button
@@ -166,7 +168,7 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
               <div className="text-center">
                 <p className="text-surface-400 text-xs mb-1">Sell</p>
                 <p className="text-xl font-semibold text-surface-100">
-                  {formatAmount(order.sellAmount)}
+                  {formatAmount(order.sellToken.amount || undefined)}
                 </p>
                 <p className="text-surface-300 text-sm">
                   {order.sellToken.symbol ||
@@ -193,8 +195,8 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
               <div className="text-center">
                 <p className="text-surface-400 text-xs mb-1">Buy</p>
                 <p className="text-xl font-semibold text-surface-100">
-                  {order.buyAmount
-                    ? formatAmount(order.buyAmount)
+                  {order.buyToken.amount
+                    ? formatAmount(order.buyToken.amount)
                     : calculateExpectedBuyAmount(order)
                     ? `~${calculateExpectedBuyAmount(order)}`
                     : "~"}
@@ -238,29 +240,30 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
               Details
             </h3>
             <div className="bg-surface-800/30 rounded-lg px-4">
-              <InfoRow
-                label="Order ID"
-                value={truncateAddress(order.orderId)}
-                mono
-              />
+              <InfoRow label="Order ID" value={truncateAddress(orderId)} mono />
               <InfoRow label="Slippage" value={`${order.slippageBps / 100}%`} />
-              {order.quoteRequest?.config &&
-                "triggerPrice" in order.quoteRequest.config && (
+              {"triggerPrice" in order.config && (
+                <InfoRow
+                  label="Trigger Price"
+                  value={`${(order.config as any).triggerPrice} ${
+                    order.sellToken.symbol
+                  }/${order.buyToken.symbol}`}
+                />
+              )}
+              {"trailing" in order.config &&
+                (order.config as StopOrderConfigDto).trailing !== undefined &&
+                order.orderType.startsWith("stop") && (
                   <InfoRow
-                    label="Trigger Price"
-                    value={`${order.quoteRequest.config.triggerPrice} ${order.sellToken.symbol}/${order.buyToken.symbol}`}
+                    label="Trailing"
+                    value={
+                      (order.config as StopOrderConfigDto).trailing
+                        ? "Yes"
+                        : "No"
+                    }
                   />
                 )}
               <InfoRow label="Created" value={formatDate(order.createdAt)} />
               <InfoRow label="Expires" value={formatDate(order.expiresAt)} />
-              {order.trailing && <InfoRow label="Trailing" value="Yes" />}
-              {order.txHash && (
-                <InfoRow
-                  label="Tx Hash"
-                  value={truncateAddress(order.txHash)}
-                  mono
-                />
-              )}
             </div>
           </div>
 

@@ -59,7 +59,11 @@ export function useCancel(): UseCancelResult {
 
         // Check if API returned an error in the response
         if (!result.success && result.error) {
-          setError(result.error.message || "Cancel failed");
+          const message =
+            result.error?.message ||
+            (typeof result.error === "string" ? result.error : "") ||
+            "Cancel failed";
+          setError(message);
           setIsLoading(false);
           return result;
         }
@@ -71,7 +75,6 @@ export function useCancel(): UseCancelResult {
         if (err instanceof Error) {
           errorMessage = err.message;
         } else if (typeof err === "object" && err !== null) {
-          // Handle case where error is an object with message property
           const errObj = err as {
             message?: string;
             error?: { message?: string };
