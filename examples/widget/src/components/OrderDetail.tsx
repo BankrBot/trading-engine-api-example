@@ -260,6 +260,14 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                   }/${order.buyToken.symbol}`}
                 />
               )}
+              {"submitPrice" in order.config &&
+                (order.orderType.startsWith("limit") ||
+                  order.orderType.startsWith("stop")) && (
+                  <InfoRow
+                    label="Submit Price"
+                    value={(order.config as any).submitPrice}
+                  />
+                )}
               {"trailing" in order.config &&
                 (order.config as StopOrderConfigDto).trailing !== undefined &&
                 order.orderType.startsWith("stop") && (

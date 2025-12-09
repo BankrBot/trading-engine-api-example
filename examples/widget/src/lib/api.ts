@@ -10,9 +10,6 @@ import type {
   GetOrderResponse,
 } from "./types";
 
-// Toggle additional logging for order fetch/list responses
-const LOG_ORDER_RESPONSES = true;
-
 // Helper for making API requests
 // API key is handled server-side by the Next.js proxy route
 async function apiRequest<T>(
@@ -37,16 +34,7 @@ async function apiRequest<T>(
   const data = await response.json();
 
   console.log(`[API] Response status: ${response.status}`);
-  console.log("[API] Response data:", JSON.stringify(data, null, 2));
-
-  if (
-    LOG_ORDER_RESPONSES &&
-    (path.startsWith("/list") ||
-      // heuristic: GET /:orderId (single segment after slash)
-      (path.startsWith("/") && path.split("/").filter(Boolean).length === 1))
-  ) {
-    console.log("[API][ORDERS] Extra log:", JSON.stringify(data, null, 2));
-  }
+  console.log("[API] Response data:", data);
 
   if (!response.ok) {
     // Handle nested error envelope: { error: { type, message, ... } }
