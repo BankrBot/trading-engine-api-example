@@ -64,14 +64,14 @@ export interface BuyQuoteTokenMetadata extends QuoteTokenMetadata {
 // External order config DTOs (no orderType here; top-level orderType covers it)
 export interface LimitOrderConfigDto {
   triggerPrice: string;
-  submitPrice: number;
+  submitPrice: string;
 }
 
 export interface StopOrderConfigDto {
   triggerPrice: string;
   trailing?: boolean;
   percentage?: number;
-  submitPrice: number;
+  submitPrice: string;
 }
 
 export interface DcaConfigDto {
