@@ -14,13 +14,25 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // Format amount for display
-function formatAmount(amount: { raw: string; formatted: string } | undefined) {
+function formatAmount(
+  amount:
+    | { raw: string; formatted: string; usdValue?: number | null }
+    | undefined
+) {
   if (!amount) return "-";
   const num = parseFloat(amount.formatted);
   if (num < 0.001) return "<0.001";
   if (num < 1) return num.toFixed(4);
   if (num < 1000) return num.toFixed(2);
   return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+// Format USD value for display
+function formatUsdValue(usdValue: number | null | undefined): string | null {
+  if (usdValue === null || usdValue === undefined) return null;
+  if (usdValue < 0.01) return `$${usdValue.toFixed(4)}`;
+  if (usdValue < 1000) return `$${usdValue.toFixed(2)}`;
+  return `$${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 // Format date for display
@@ -34,7 +46,15 @@ function truncateAddress(address: string) {
 }
 
 export function OrderList() {
-  const { orders, isLoading, error, refetch } = useOrders();
+  const {
+    orders,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    loadMore,
+    refetch,
+  } = useOrders();
   const invalidateOrders = useInvalidateOrders();
   const [selectedOrder, setSelectedOrder] = useState<ExternalOrder | null>(
     null
@@ -177,12 +197,20 @@ export function OrderList() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-surface-300">
-                        {formatAmount(order.sellAmount)}{" "}
-                        <span className="text-surface-500">
-                          {order.sellToken.symbol}
+                      <div className="flex flex-col">
+                        <span className="text-surface-300">
+                          {formatAmount(order.sellToken.amount || undefined)}{" "}
+                          <span className="text-surface-500">
+                            {order.sellToken.symbol}
+                          </span>
                         </span>
-                      </span>
+                        {order.sellToken.amount?.usdValue !== null &&
+                          order.sellToken.amount?.usdValue !== undefined && (
+                            <span className="text-surface-500 text-xs mt-0.5">
+                              {formatUsdValue(order.sellToken.amount.usdValue)}
+                            </span>
+                          )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-surface-400 text-sm">
@@ -203,6 +231,26 @@ export function OrderList() {
             </tbody>
           </table>
         </div>
+
+        {/* Load More Button */}
+        {hasMore && (
+          <div className="flex justify-center mt-4 pb-4">
+            <button
+              onClick={loadMore}
+              disabled={isLoadingMore}
+              className="btn btn-secondary text-sm py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingMore ? (
+                <>
+                  <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  Loading...
+                </>
+              ) : (
+                "Load More"
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Order Detail Modal */}

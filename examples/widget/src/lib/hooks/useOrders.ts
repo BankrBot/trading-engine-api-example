@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { listOrders, getOrder } from "@/lib/api";
@@ -15,6 +16,7 @@ interface UseOrdersOptions {
 interface UseOrdersResult {
   orders: ExternalOrder[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: Error | null;
   hasMore: boolean;
   loadMore: () => void;
@@ -26,12 +28,14 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   const queryClient = useQueryClient();
   const { type, status, refetchInterval = 10000 } = options;
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  // Track accumulated orders and cursor
+  const [accumulatedOrders, setAccumulatedOrders] = useState<ExternalOrder[]>(
+    []
+  );
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["orders", address, type, status],
     queryFn: async () => {
       if (!address) return { orders: [], next: undefined };
@@ -41,17 +45,46 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
     refetchInterval,
   });
 
-  const loadMore = () => {
-    // TODO: Implement cursor-based pagination
-    // For now, just refetch
-    refetch();
-  };
+  // Update accumulated orders when initial data changes
+  useEffect(() => {
+    if (data) {
+      setAccumulatedOrders(data.orders);
+      setNextCursor(data.next);
+    }
+  }, [data]);
+
+  // Reset accumulated orders when filters change
+  useEffect(() => {
+    setAccumulatedOrders([]);
+    setNextCursor(undefined);
+  }, [address, type, status]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || !address || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const response = await listOrders({
+        maker: address,
+        type,
+        status,
+        cursor: nextCursor,
+      });
+      setAccumulatedOrders((prev) => [...prev, ...response.orders]);
+      setNextCursor(response.next);
+    } catch (err) {
+      console.error("Error loading more orders:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, address, type, status, isLoadingMore]);
 
   return {
-    orders: data?.orders || [],
+    orders: accumulatedOrders,
     isLoading,
+    isLoadingMore,
     error: error as Error | null,
-    hasMore: !!data?.next,
+    hasMore: !!nextCursor,
     loadMore,
     refetch,
   };
@@ -65,12 +98,7 @@ interface UseOrderResult {
 }
 
 export function useOrder(orderId: string | null): UseOrderResult {
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["order", orderId],
     queryFn: async () => {
       if (!orderId) return null;
@@ -96,4 +124,3 @@ export function useInvalidateOrders() {
     queryClient.invalidateQueries({ queryKey: ["orders"] });
   };
 }
-

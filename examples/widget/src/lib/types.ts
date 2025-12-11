@@ -40,6 +40,7 @@ export interface QuoteRequest {
 export interface Amount {
   raw: string;
   formatted: string;
+  usdValue?: number | null; // USD value of the amount (null if price unavailable)
 }
 
 // Token metadata in responses

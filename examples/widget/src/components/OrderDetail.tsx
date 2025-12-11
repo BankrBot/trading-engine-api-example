@@ -11,13 +11,25 @@ interface OrderDetailProps {
 }
 
 // Format amount for display
-function formatAmount(amount: { raw: string; formatted: string } | undefined) {
+function formatAmount(
+  amount:
+    | { raw: string; formatted: string; usdValue?: number | null }
+    | undefined
+) {
   if (!amount) return "-";
   const num = parseFloat(amount.formatted);
   if (num < 0.0001) return amount.formatted;
   if (num < 1) return num.toFixed(6);
   if (num < 1000) return num.toFixed(4);
   return num.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
+// Format USD value for display
+function formatUsdValue(usdValue: number | null | undefined): string | null {
+  if (usdValue === null || usdValue === undefined) return null;
+  if (usdValue < 0.01) return `$${usdValue.toFixed(4)}`;
+  if (usdValue < 1000) return `$${usdValue.toFixed(2)}`;
+  return `$${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 // Calculate expected buy amount from trigger price for limit/stop orders
@@ -184,6 +196,12 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                   {order.sellToken.symbol ||
                     truncateAddress(order.sellToken.address)}
                 </p>
+                {order.sellToken.amount?.usdValue !== null &&
+                  order.sellToken.amount?.usdValue !== undefined && (
+                    <p className="text-surface-500 text-xs mt-1">
+                      {formatUsdValue(order.sellToken.amount.usdValue)}
+                    </p>
+                  )}
               </div>
 
               <div className="text-surface-500">
@@ -215,6 +233,12 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                   {order.buyToken.symbol ||
                     truncateAddress(order.buyToken.address)}
                 </p>
+                {order.buyToken.amount?.usdValue !== null &&
+                  order.buyToken.amount?.usdValue !== undefined && (
+                    <p className="text-surface-500 text-xs mt-1">
+                      {formatUsdValue(order.buyToken.amount.usdValue)}
+                    </p>
+                  )}
               </div>
             </div>
           </div>
@@ -232,6 +256,12 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                     {formatAmount(order.totalSoldAmount)}{" "}
                     {order.sellToken.symbol}
                   </p>
+                  {order.totalSoldAmount?.usdValue !== null &&
+                    order.totalSoldAmount?.usdValue !== undefined && (
+                      <p className="text-surface-500 text-xs mt-1">
+                        {formatUsdValue(order.totalSoldAmount.usdValue)}
+                      </p>
+                    )}
                 </div>
                 <div>
                   <p className="text-surface-400">Total Received</p>
@@ -239,6 +269,12 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                     {formatAmount(order.totalReceivedAmount)}{" "}
                     {order.buyToken.symbol}
                   </p>
+                  {order.totalReceivedAmount?.usdValue !== null &&
+                    order.totalReceivedAmount?.usdValue !== undefined && (
+                      <p className="text-surface-500 text-xs mt-1">
+                        {formatUsdValue(order.totalReceivedAmount.usdValue)}
+                      </p>
+                    )}
                 </div>
               </div>
             </div>
@@ -348,19 +384,41 @@ export function OrderDetail({ order, onClose }: OrderDetailProps) {
                     {entry.output && (
                       <div className="text-surface-400">
                         {entry.output.sellAmount && (
-                          <span>
-                            Sold {formatAmount(entry.output.sellAmount)}{" "}
-                            {order.sellToken.symbol}
-                          </span>
+                          <div>
+                            <span>
+                              Sold {formatAmount(entry.output.sellAmount)}{" "}
+                              {order.sellToken.symbol}
+                            </span>
+                            {entry.output.sellAmount.usdValue !== null &&
+                              entry.output.sellAmount.usdValue !==
+                                undefined && (
+                                <span className="text-surface-500 text-xs ml-2">
+                                  (
+                                  {formatUsdValue(
+                                    entry.output.sellAmount.usdValue
+                                  )}
+                                  )
+                                </span>
+                              )}
+                          </div>
                         )}
                         {entry.output.buyAmount && (
-                          <span>
-                            {" "}
-                            → Received {formatAmount(
-                              entry.output.buyAmount
-                            )}{" "}
-                            {order.buyToken.symbol}
-                          </span>
+                          <div className="mt-1">
+                            <span>
+                              → Received {formatAmount(entry.output.buyAmount)}{" "}
+                              {order.buyToken.symbol}
+                            </span>
+                            {entry.output.buyAmount.usdValue !== null &&
+                              entry.output.buyAmount.usdValue !== undefined && (
+                                <span className="text-surface-500 text-xs ml-2">
+                                  (
+                                  {formatUsdValue(
+                                    entry.output.buyAmount.usdValue
+                                  )}
+                                  )
+                                </span>
+                              )}
+                          </div>
                         )}
                       </div>
                     )}
