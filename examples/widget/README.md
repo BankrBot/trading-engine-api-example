@@ -42,20 +42,13 @@ bun dev
 | Variable                                | Description                                                                        | Required |
 | --------------------------------------- | ---------------------------------------------------------------------------------- | -------- |
 | `API_BACKEND_URL`                       | Backend API URL (server-side only, default: `https://api.bankr.bot/trading/order`) | No       |
-| `API_KEY`                               | API key with `externalOrdersEnabled: true` (server-side only)                      | Yes      |
+| `API_KEY`                               | API key (server-side only)                                                         | Yes      |
 | `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` | WalletConnect project ID (use "demo" for local)                                    | No       |
 | `NEXT_PUBLIC_API_BASE_URL`              | Override proxy path (default: `/api/order`)                                        | No       |
 
 ### Getting an API Key
 
-The API key must have `externalOrdersEnabled: true`. Generate one in bankr-1:
-
-```bash
-cd bankr-1
-bun run development/scripts/generate-test-api-keys.ts
-```
-
-This creates test API keys with external orders enabled. Copy the `bk_xxx...` key from the output.
+Contact Bankr team
 
 ## Project Structure
 
