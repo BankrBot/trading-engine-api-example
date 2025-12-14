@@ -48,7 +48,7 @@ bun dev
 
 ### Getting an API Key
 
-Contact Bankr team
+Create an API [https://bankr.bot/api](https://bankr.bot/api)
 
 ## Project Structure
 
