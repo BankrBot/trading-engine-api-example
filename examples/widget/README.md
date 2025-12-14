@@ -4,8 +4,8 @@ A Next.js widget for interacting with the Bankr External Orders API. Supports li
 
 ## Features
 
-- **Wallet Connection**: Connect via RainbowKit (supports WalletConnect, MetaMask, etc.)
-- **Multi-Chain Support**: Base, Polygon, Ethereum Mainnet, Unichain
+- **Wallet Connection**: Connect via RainbowKit (supports WalletConnect, Base wallet, MetaMask, etc.)
+- **Chain Support**: Base (more soon)
 - **Order Types**: Limit Buy/Sell, Stop Buy/Sell, DCA, TWAP
 - **Order Management**: View, track, and cancel orders
 - **EIP-712 Signing**: Secure order signing with typed data
@@ -22,7 +22,7 @@ bun install
 
 ```env
 # Backend API (server-side, not exposed to browser)
-API_BACKEND_URL=http://localhost:3333/trading/order
+API_BACKEND_URL=https://api.bankr.bot/trading/order
 API_KEY=your-api-key-here
 
 # Client-side (optional overrides)
@@ -41,7 +41,7 @@ bun dev
 
 | Variable                                | Description                                                                        | Required |
 | --------------------------------------- | ---------------------------------------------------------------------------------- | -------- |
-| `API_BACKEND_URL`                       | Backend API URL (server-side only, default: `http://localhost:3333/trading/order`) | No       |
+| `API_BACKEND_URL`                       | Backend API URL (server-side only, default: `https://api.bankr.bot/trading/order`) | No       |
 | `API_KEY`                               | API key with `externalOrdersEnabled: true` (server-side only)                      | Yes      |
 | `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` | WalletConnect project ID (use "demo" for local)                                    | No       |
 | `NEXT_PUBLIC_API_BASE_URL`              | Override proxy path (default: `/api/order`)                                        | No       |
